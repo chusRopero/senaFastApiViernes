@@ -1,7 +1,4 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-
+from sqlalchemy import Column, Integer, String
 from app.config.database import Base
 
 # ==========================================
@@ -26,5 +23,6 @@ class User(Base):
     correo = Column(
         String(100),
         nullable=False,
-        unique=True
+        unique=True,
+        index=True
     )

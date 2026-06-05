@@ -1,6 +1,6 @@
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.models.user_model import User
 from app.schemas.user_schema import UserSchema
 from app.utils.response import api_response
 
@@ -8,66 +8,45 @@ from app.utils.response import api_response
 # ==========================================
 # GET ALL USERS
 # ==========================================
+
 def get_users(db: Session):
 
-    query = text("""
-        SELECT
-            id,
-            nombre,
-            correo,
-            created_at
-        FROM usuarios
-        ORDER BY id
-    """)
+    users = db.query(User).order_by(User.id).all()
 
-    result = db.execute(query)
+    if not users:
+        return api_response(
+            success=False,
+            message="No hay usuarios registrados",
+            data=[]
+        )
 
-    users = [
+    data = [
         {
-            "id": row.id,
-            "nombre": row.nombre,
-            "correo": row.correo,
-            "created_at": row.created_at
+            "id": u.id,
+            "nombre": u.nombre,
+            "correo": u.correo
         }
-        for row in result
+        for u in users
     ]
 
     return api_response(
         success=True,
         message="Lista de usuarios",
-        data=users
+        data=data
     )
-
 
 # ==========================================
 # GET USER BY ID
 # ==========================================
-def get_user(
-    id: int,
-    db: Session
-):
 
-    query = text("""
-        SELECT
-            id,
-            nombre,
-            correo,
-            created_at
-        FROM usuarios
-        WHERE id = :id
-    """)
+def get_user(id: int, db: Session):
 
-    result = db.execute(
-        query,
-        {"id": id}
-    )
-
-    user = result.fetchone()
+    user = db.query(User).filter(User.id == id).first()
 
     if not user:
         return api_response(
             success=False,
-            message="Usuario no encontrado"
+            message=f"Usuario con id {id} no encontrado"
         )
 
     return api_response(
@@ -76,31 +55,18 @@ def get_user(
         data={
             "id": user.id,
             "nombre": user.nombre,
-            "correo": user.correo,
-            "created_at": user.created_at
+            "correo": user.correo
         }
     )
-
 
 # ==========================================
 # CREATE USER
 # ==========================================
-def create_user(
-    user: UserSchema,
-    db: Session
-):
 
-    # Verificar si el correo ya existe
-    query_exists = text("""
-        SELECT id
-        FROM usuarios
-        WHERE correo = :correo
-    """)
+def create_user(user: UserSchema, db: Session):
 
-    exists = db.execute(
-        query_exists,
-        {"correo": user.correo}
-    ).fetchone()
+    # validar correo duplicado
+    exists = db.query(User).filter(User.correo == user.correo).first()
 
     if exists:
         return api_response(
@@ -108,103 +74,82 @@ def create_user(
             message="El correo ya está registrado"
         )
 
-    query = text("""
-        INSERT INTO usuarios (
-            nombre,
-            correo,
-            password
-        )
-        VALUES (
-            :nombre,
-            :correo,
-            :password
-        )
-    """)
-
-    db.execute(
-        query,
-        {
-            "nombre": user.nombre,
-            "correo": user.correo,
-            "password": user.password
-        }
+    new_user = User(
+        nombre=user.nombre,
+        correo=user.correo
     )
 
+    db.add(new_user)
     db.commit()
+    db.refresh(new_user)
 
     return api_response(
         success=True,
-        message="Usuario creado correctamente"
+        message="Usuario creado correctamente",
+        data={
+            "id": new_user.id,
+            "nombre": new_user.nombre,
+            "correo": new_user.correo
+        }
     )
-
 
 # ==========================================
 # UPDATE USER
 # ==========================================
-def update_user(
-    id: int,
-    user: UserSchema,
-    db: Session
-):
 
-    query = text("""
-        UPDATE usuarios
-        SET
-            nombre = :nombre,
-            correo = :correo,
-            password = :password
-        WHERE id = :id
-    """)
+def update_user(id: int, user: UserSchema, db: Session):
 
-    result = db.execute(
-        query,
-        {
-            "id": id,
-            "nombre": user.nombre,
-            "correo": user.correo,
-            "password": user.password
-        }
-    )
+    db_user = db.query(User).filter(User.id == id).first()
 
-    db.commit()
-
-    if result.rowcount == 0:
+    if not db_user:
         return api_response(
             success=False,
-            message="Usuario no encontrado"
+            message=f"Usuario con id {id} no encontrado"
         )
+
+    # validar correo duplicado en otro usuario
+    email_exists = db.query(User).filter(
+        User.correo == user.correo,
+        User.id != id
+    ).first()
+
+    if email_exists:
+        return api_response(
+            success=False,
+            message="El correo ya está en uso por otro usuario"
+        )
+
+    db_user.nombre = user.nombre
+    db_user.correo = user.correo
+
+    db.commit()
+    db.refresh(db_user)
 
     return api_response(
         success=True,
-        message="Usuario actualizado correctamente"
+        message="Usuario actualizado correctamente",
+        data={
+            "id": db_user.id,
+            "nombre": db_user.nombre,
+            "correo": db_user.correo
+        }
     )
-
 
 # ==========================================
 # DELETE USER
 # ==========================================
-def delete_user(
-    id: int,
-    db: Session
-):
+def delete_user(id: int, db: Session):
 
-    query = text("""
-        DELETE FROM usuarios
-        WHERE id = :id
-    """)
+    db_user = db.query(User).filter(User.id == id).first()
 
-    result = db.execute(
-        query,
-        {"id": id}
-    )
-
-    db.commit()
-
-    if result.rowcount == 0:
+    if not db_user:
         return api_response(
             success=False,
-            message="Usuario no encontrado"
+            message=f"Usuario con id {id} no encontrado"
         )
+
+    db.delete(db_user)
+    db.commit()
 
     return api_response(
         success=True,
