@@ -18,17 +18,40 @@ Proyecto API REST desarrollado con Python y FastAPI.
 project/
 │
 ├── app/
-│   ├── controllers/
-│   ├── routes/
-│   ├── schemas/
-│   ├── models/
+│   │
+│   ├── main.py
+│   │
 │   ├── config/
+│   │   └── database.py
+│   │
+│   ├── models/
+│   │   └── user_model.py
+│   │
+│   ├── schemas/
+│   │   ├── user_schema.py
+│   │   └── login_schema.py
+│   │
+│   ├── controllers/
+│   │   ├── user_controller.py
+│   │   └── auth_controller.py
+│   │
+│   ├── routes/
+│   │   ├── user_routes.py
+│   │   └── auth_route.py
+│   │
+│   ├── middleware/
+│   │   └── auth.py
+│   │
 │   ├── utils/
-│   └── main.py
+│   │   ├── security.py
+│   │   ├── hash.py
+│   │   └── response.py
+│   │
+│   └── __init__.py
 │
+├── .env
 ├── requirements.txt
-├── .gitignore
-└── README.md
+└── venv/
 ```
 
 ## Clonar el Repositorio
