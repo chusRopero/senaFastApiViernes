@@ -124,6 +124,14 @@ DB_PORT=3306
 DB_NAME=nombre_base_datos
 DB_USER=usuario
 DB_PASSWORD=contraseña
+
+# ==========================================
+# JWT CONFIGURATION
+# ==========================================
+
+SECRET_KEY=1234567890_adso_sena_2026
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
 ## Actualizar Dependencias
