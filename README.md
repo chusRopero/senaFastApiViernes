@@ -21,7 +21,6 @@ project/
 │   ├── controllers/
 │   ├── routes/
 │   ├── schemas/
-│   ├── models/
 │   ├── config/
 │   ├── utils/
 │   └── main.py
