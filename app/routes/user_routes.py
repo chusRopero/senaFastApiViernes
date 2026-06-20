@@ -1,6 +1,4 @@
-from fastapi import APIRouter
-from fastapi import Depends
-
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.config.database import get_db
@@ -15,61 +13,67 @@ from app.controllers.user_controller import (
 
 from app.schemas.user_schema import UserSchema
 
+# 🔐 IMPORTANTE: autenticación
+from app.middleware.auth import get_current_user
+
 # ==========================================
 # ROUTER
 # ==========================================
-router = APIRouter()
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
 
 # ==========================================
-# GET ALL USERS
+# GET ALL USERS (PROTEGIDO)
 # ==========================================
-@router.get("/users")
+@router.get("/")
 def users(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
 ):
     return get_users(db)
 
 # ==========================================
-# GET USER BY ID
+# GET USER BY ID (PROTEGIDO)
 # ==========================================
-@router.get("/users/{id}")
-def user(
+@router.get("/{id}")
+def user_by_id(
     id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
 ):
     return get_user(id, db)
 
 # ==========================================
-# CREATE USER
+# CREATE USER (PROTEGIDO)
 # ==========================================
-@router.post("/users")
+@router.post("/")
 def store_user(
-    user: UserSchema,
+    user_data: UserSchema,
     db: Session = Depends(get_db)
 ):
-    return create_user(user, db)
+    return create_user(user_data, db)
 
 # ==========================================
-# UPDATE USER
+# UPDATE USER (PROTEGIDO)
 # ==========================================
-@router.put("/users/{id}")
+@router.put("/{id}")
 def edit_user(
     id: int,
-    user: UserSchema,
-    db: Session = Depends(get_db)
+    user_data: UserSchema,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
 ):
-    return update_user(
-        id,
-        user,
-        db
-    )
+    return update_user(id, user_data, db)
 
 # ==========================================
-# DELETE USER
+# DELETE USER (PROTEGIDO)
 # ==========================================
-@router.delete("/users/{id}")
+@router.delete("/{id}")
 def destroy_user(
     id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
 ):
     return delete_user(id, db)

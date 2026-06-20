@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 
+from app.utils.hash import hash_password
+
 from app.models.user_model import User
 from app.schemas.user_schema import UserSchema
 from app.utils.response import api_response
@@ -76,8 +78,12 @@ def create_user(user: UserSchema, db: Session):
 
     new_user = User(
         nombre=user.nombre,
-        correo=user.correo
+        correo=user.correo,
+        password=hash_password(user.password)
     )
+    
+    if len(new_user.password) > 72:
+        new_user.password = new_user.password[:72]
 
     db.add(new_user)
     db.commit()
